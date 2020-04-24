@@ -83,6 +83,8 @@
 //! To get started you could check out the template projects [here](https://www.github.com/RusPiRo/ruspiro_templates)
 //!
 
+extern crate alloc;
+use alloc::{sync::Arc, boxed::Box};
 pub mod macros;
 pub use self::macros::*;
 
@@ -95,10 +97,13 @@ mod panic;
 #[cfg(not(any(test, doctest)))]
 mod stubs;
 
+
+use ruspiro_gpio::*;
+use ruspiro_singleton::*;
+
 #[cfg(all(target_arch = "aarch64", not(feature = "singlecore")))]
 use ruspiro_cache as cache;
 
-use ruspiro_console::*;
 use ruspiro_interrupt::IRQ_MANAGER;
 use ruspiro_mailbox::*;
 use ruspiro_timer as timer;
@@ -124,27 +129,8 @@ fn __rust_entry(core: u32) -> ! {
     mmu::initialize_mmu(core);
     // special additional setup might be done on the main core only
     if core == 0 {
-        // get the current core clock rate to initialize the Uart1 with
-        let core_rate = MAILBOX
-            .take_for(|mb: &mut Mailbox| mb.get_clockrate(ClockId::Core))
-            .unwrap_or(250_000_000);
-        // first thing we would like to do is to let the outside world know that we are booting
-        // so if this is core 0 we initialze the uart1 interface with default settings and print some
-        // string
-        let mut uart = Uart1::new();
-
-        let _ = uart.initialize(core_rate, 115_200);
-        CONSOLE.take_for(|console| console.replace(uart));
-
-        #[cfg(target_arch = "aarch64")]
-        println!("\r\n########## RusPiRo ----- Bootstrapper v0.3 @ Aarch64 ----- ##########");
-        #[cfg(target_arch = "arm")]
-        println!("\r\n########## RusPiRo ----- Bootstrapper v0.3 @ Aarch32 ----- ##########");
-
-        // do some arbitrary sleep here to let the uart send the initial greetings before running
-        // the kernel, which may initialize the UART for it's own purpose and this would break
-        // this transfer...
-        timer::sleep(timer::Useconds(10000));
+        // send some greetings
+        log_greetings();
 
         // configure interrupt manager for further usage
         IRQ_MANAGER.take_for(|mgr| mgr.initialize());
@@ -210,4 +196,35 @@ fn kickoff_next_core(core: u32) {
         cache::cleaninvalidate();
         asm!("sev"); // trigger an event to wake up the sleeping cores
     }
+}
+
+fn log_greetings() {
+    extern crate alloc;
+    use alloc::format;
+    // get GPIO access to be able to configure the miniUART
+    // as this is the boot strapping - no other thing could have occupied the Gpio.
+    // so if unwrap failes it's fine to panic here
+    let gpio = Gpio::new().unwrap();
+    let mut uart = Uart1::new(
+        Arc::new(Singleton::new(
+            Box::new(
+                gpio
+            )
+        ))
+    );
+    // get the current core clock rate to initialize the Uart1 with
+    let core_rate = MAILBOX
+        .take_for(|mb: &mut Mailbox| mb.get_clockrate(ClockId::Core))
+        .unwrap_or(250_000_000);
+    let _ = uart.initialize(core_rate, 115_200);
+
+    #[cfg(target_arch = "aarch64")]
+    uart.send_string("\r\n########## RusPiRo ----- Bootstrapper v0.3 @ Aarch64 ----- ##########\r\n");
+    #[cfg(target_arch = "arm")]
+    uart.send_string("\r\n########## RusPiRo ----- Bootstrapper v0.3 @ Aarch32 ----- ##########\r\n");
+
+    // do some arbitrary sleep here to let the uart send the initial greetings before running
+    // the kernel, which may initialize the UART for it's own purpose and this would break
+    // this transfer...
+    timer::sleep(timer::Useconds(10000));
 }
