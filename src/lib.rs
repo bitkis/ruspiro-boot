@@ -91,7 +91,7 @@ mod panic;
 #[cfg(not(any(test, doctest)))]
 mod stubs;
 
-use ruspiro_mmu::*;
+use ruspiro_mmu as mmu;
 #[cfg(all(target_arch = "aarch64", not(feature = "singlecore")))]
 use ruspiro_cache as cache;
 
@@ -205,6 +205,6 @@ fn kickoff_next_core(core: u32) {
                                                                     // as this core may have caches enabled, clean/invalidate so the other core
                                                                     // sees the correct data on memory and the write does not only hit the cache
         cache::cleaninvalidate();
-        asm!("sev"); // trigger an event to wake up the sleeping cores
+        llvm_asm!("sev"); // trigger an event to wake up the sleeping cores
     }
 }

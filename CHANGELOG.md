@@ -3,7 +3,8 @@
   - ### :wrench: Maintenance
     - The MMU functions are now moved into a separate crate `ruspiro-mmu` as later translation table maintenance functions
     will be required to be available for other crates that need to configure specific memory attributes.
-    
+    - Use `cargo make` with a `Makefile.toml` for better build experience.
+
 ## :apple: v0.3.1
   - ### :bulb: Features
     - add some console log statements in the panic handler that gives a clue of the panic when at least
