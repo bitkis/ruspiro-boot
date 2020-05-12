@@ -6,7 +6,7 @@
  **********************************************************************************************************************/
 #![doc(html_root_url = "https://docs.rs/ruspiro-boot/0.3.1")]
 #![cfg_attr(not(any(test, doctest)), no_std)]
-#![feature(asm, lang_items, linkage)]
+#![feature(llvm_asm, lang_items, linkage)]
 
 //! # RusPiRo Boot Strapping for Raspberry Pi
 //!
@@ -86,15 +86,12 @@
 pub mod macros;
 pub use self::macros::*;
 
-#[cfg_attr(target_arch = "aarch64", path = "mmu64.rs")]
-#[cfg_attr(target_arch = "arm", path = "mmu32.rs")]
-mod mmu;
-
 #[cfg(not(any(test, doctest)))]
 mod panic;
 #[cfg(not(any(test, doctest)))]
 mod stubs;
 
+use ruspiro_mmu::*;
 #[cfg(all(target_arch = "aarch64", not(feature = "singlecore")))]
 use ruspiro_cache as cache;
 

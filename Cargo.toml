@@ -27,13 +27,14 @@ maintenance = { status = "actively-developed" }
 cc = "1.0.38"
 
 [dependencies]
-ruspiro-register = { path = "../register", version = "0.4" }
-ruspiro-mailbox = { path = "../mailbox", version =" 0.3" }
-ruspiro-uart = { path = "../uart", version = "0.3" }
-ruspiro-console = { path = "../console", version = "0.3" }
-ruspiro-timer = { path = "../timer", version = "0.4" }
-ruspiro-cache = { path = "../cache", version = "0.3" }
-ruspiro-interrupt = { path = "../interrupt", version = "0.3" }
+ruspiro-register = "0.4"
+ruspiro-mailbox = "0.3"
+ruspiro-uart = "0.3"
+ruspiro-console = "0.3"
+ruspiro-timer = "0.4"
+ruspiro-cache = "0.3"
+ruspiro-interrupt = "0.3"
+ruspiro-mmu = { path = "../mmu", version = "0.1" }
 
 [features]
 ruspiro_pi3 = [
